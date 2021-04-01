@@ -1,0 +1,4 @@
+archer,65-75-30-50-55-35,a person who uses a bow,none
+dueler,70-30-15-55-25-15,faster than your grandma,none
+king,70-40-20-35-40-35,descendant of god?,none
+assassin,70-40-20-35-40-35,a sneaker theif,none

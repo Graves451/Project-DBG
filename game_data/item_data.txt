@@ -1,1 +1,0 @@
-stone sword,20,weapon,big sword for a big boi,12345,sword,123,2
