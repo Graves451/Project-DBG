@@ -1,3 +1,4 @@
+fist,0,weapon,hmmm where did my weapon go?,fist,2,1,physical
 stone sword,20,weapon,big sword for a big boi,sword,5,2,physical
 iron sword,40,weapon,big sword for a big boi,sword,10,3,physical
 steel sword,60,weapon,big sword for a big boi,sword,13,4,physical
@@ -6,4 +7,5 @@ stone spear,20,weapon,big sword for a big boi,spear,7,1,physical
 iron spear,40,weapon,big sword for a big boi,spear,12,2,physical
 steel spear,60,weapon,big sword for a big boi,spear,15,2,physical
 tungsten spear,100,weapon,big sword for a big boi,spear,17,3,physical
+fire magic,50,weapon,something's gonna burn,tome,7,2,magical
 healing potion,3,usable,something strange tasting,6,5

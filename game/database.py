@@ -2,10 +2,13 @@ import mysql.connector as mysql
 import hashlib
 import datetime
 
-#user: user_id,faction,daily,weekly,first
+#user: user_id,daily,weekly,first
+#              0      1        2       3       4    5      6         7          8        9     10      11      12
 #character: user_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic
-#bosses: message_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic
-
+#enemies: message_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic
+#classes: class_name, growth_rate, desc, attribute, weapon_choice
+#items item_id, name, cost, type, desc
+#weapons item_id, type, power, crit, damage_type
 #usable: itemname, target, amount
 #graphics: graphic_name, value
 
@@ -25,12 +28,12 @@ cursor = db.cursor(buffered = True)
 class Database:
     def setup(self):
         #creates a table object for other users
-        cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT(11) NOT NULL PRIMARY KEY, faction VARCHAR(255), daily DATETIME, weekly DATETIME, first DATE)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT(11) NOT NULL PRIMARY KEY, daily DATETIME, weekly DATETIME, first DATE)")
         cursor.execute("CREATE TABLE IF NOT EXISTS characters (user_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11))")
         cursor.execute("CREATE TABLE IF NOT EXISTS inventories (user_id BIGINT(11) NOT NULL, item_id INT(11), amount INT(11))")
         cursor.execute("CREATE TABLE IF NOT EXISTS bank (user_id BIGINT(11) NOT NULL, money BIGINT(11))")
-        cursor.execute("CREATE TABLE IF NOT EXISTS bosses (message_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11))")
-        cursor.execute("CREATE TABLE IF NOT EXISTS classes (class_name VARCHAR(255) NOT NULL PRIMARY KEY, growth_rate VARCHAR(255), description VARCHAR(255), attributes VARCHAR(255))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS enemies (message_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS classes (class_name VARCHAR(255) NOT NULL PRIMARY KEY, growth_rate VARCHAR(255), description VARCHAR(255), attributes VARCHAR(255), weapon_choices VARCHAR(255))")
         cursor.execute("CREATE TABLE IF NOT EXISTS items (item_id INT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), cost INT(11), type VARCHAR(255), description VARCHAR(255))")
         cursor.execute("CREATE TABLE IF NOT EXISTS weapons (item_id INT(11) NOT NULL PRIMARY KEY, type VARCHAR(255), power INT(11), crit INT(11), damage_type VARCHAR(255))")
         cursor.execute("CREATE TABLE IF NOT EXISTS usables (item_id INT(11) NOT NULL PRIMARY KEY, target VARCHAR(255), amount INT(11))")
@@ -50,10 +53,11 @@ class Database:
             if line[2] == "usable":
                 self.insert_usable(line[0],line[4],line[5].replace("\n",""))
 
+        #classes: class_name, growth_rate, desc, attribute, weapon_choice
         file_data = open("game_data/class_data.txt","r")
         for line_input in file_data.read().splitlines():
             line = line_input.split(",")
-            self.insert_class(line[0],line[1],line[2],line[3].replace("\n",""))
+            self.insert_class(line[0],line[1],line[2],line[3],line[4].replace("\n",""))
 
         file_data = open("game_data/graphic.txt","r")
         for line_input in file_data.read().splitlines():
@@ -65,7 +69,7 @@ class Database:
         cursor.execute("DROP TABLE classes")
         cursor.execute("DROP TABLE weapons")
         cursor.execute("DROP TABLE usables")
-        cursor.execute("DROP TABLE bosses")
+        cursor.execute("DROP TABLE enemies")
         #delete what's after this after testing
         cursor.execute("DROP TABLE users")
         cursor.execute("DROP TABLE characters")
@@ -73,17 +77,16 @@ class Database:
 
 #####################################################################################################################################################
 
-    def add_user(self,user_id,faction):
+    def add_user(self,user_id):
         now = datetime.datetime.now()
-        query = "INSERT IGNORE INTO users (user_id, faction, daily, weekly, first) VALUES (%s, %s, %s, %s, %s)"
-        values = (user_id, faction, now-datetime.timedelta(days=1), now-datetime.timedelta(days=7), now.date())
+        query = "INSERT IGNORE INTO users (user_id, daily, weekly, first) VALUES (%s, %s, %s, %s)"
+        values = (user_id, now-datetime.timedelta(days=1), now-datetime.timedelta(days=7), now.date())
         cursor.execute(query, values)
         db.commit()
         print(str(user_id)+" has been added")
 
-    def add_character(self,user_id,name,user_class,weapon_id):
+    def add_character(self,values):
         query = "INSERT IGNORE INTO characters (user_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = (user_id, name, weapon_id, user_class, 1, 0, 15, 15, 6, 5, 7, 5, 3)
         cursor.execute(query, values)
         db.commit()
 
@@ -99,7 +102,7 @@ class Database:
                     db.commit()
                     return
                 cursor.execute("DELETE FROM inventories WHERE user_id = %s AND item_id = %s",(user_id,item_id))
-                print("%s has got an item deleted",(user_id))
+                print("%s has used %s" % (user_id,item_id))
                 db.commit()
                 return
         cursor.execute("INSERT INTO inventories (user_id, item_id, amount) VALUES (%s, %s, %s)", (user_id, item_id, amount))
@@ -112,11 +115,10 @@ class Database:
         db.commit()
 
     #under construction
-    #bosses: message_id, name, weapon_id, class, level, health, max_health, strength, magic, speed, defense, logic
-    def add_boss(self,msg_id,boss_data):
-        print(boss_data)
-        query = "INSERT INTO bosses (message_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(query, (msg_id,boss_data[0],boss_data[1],boss_data[2],boss_data[3],boss_data[4],boss_data[5],boss_data[6],boss_data[7],boss_data[8],boss_data[9],boss_data[10],boss_data[11]))
+    #enemies: message_id, name, weapon_id, class, level, health, max_health, strength, magic, speed, defense, logic
+    def add_enemy(self,enemy_data):
+        query = "INSERT INTO enemies (message_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(query, (enemy_data[0],enemy_data[1],enemy_data[2],enemy_data[3],enemy_data[4],enemy_data[5],enemy_data[6],enemy_data[7],enemy_data[8],enemy_data[9],enemy_data[10],enemy_data[11],enemy_data[12]))
         db.commit()
 
 #####################################################################################################################################################
@@ -133,8 +135,8 @@ class Database:
         cursor.execute("INSERT IGNORE INTO usables (item_id, target, amount) VALUES (%s, %s, %s)", (hash_string(itemname), target, amount))
         db.commit()
 
-    def insert_class(self,classname,growth_rate,description,attributes):
-        cursor.execute("INSERT INTO classes (class_name, growth_rate, description, attributes) VALUES (%s, %s, %s, %s)", (classname,growth_rate,description,attributes))
+    def insert_class(self,classname,growth_rate,description,attributes,weapon_choices):
+        cursor.execute("INSERT INTO classes (class_name, growth_rate, description, attributes, weapon_choices) VALUES (%s, %s, %s, %s, %s)", (classname,growth_rate,description,attributes,weapon_choices))
         db.commit()
 
     def insert_graphic(self,graphic_name, value):
@@ -146,8 +148,8 @@ class Database:
 
 #user: user_id,faction,daily,weekly,first
     def update_user(self,user_data):
-        query = "UPDATE users SET faction = %s, daily = %s, weekly = %s, first=%s WHERE user_id = %s"
-        cursor.execute(query,(user_data[1],user_data[2],user_data[3],user_data[4],user_data[0]))
+        query = "UPDATE users SET daily = %s, weekly = %s, first=%s WHERE user_id = %s"
+        cursor.execute(query,(user_data[1],user_data[2],user_data[3],user_data[0]))
         db.commit()
         print(f"{user_data[0]} has been updated")
 
@@ -158,20 +160,24 @@ class Database:
         db.commit()
         print(f"{character_data[0]} has been updated")
 
-    def update_boss(self,boss_data):
-        query = "UPDATE bosses SET name = %s, weapon_id = %s, class = %s, level = %s, exp = %s, health = %s, max_health = %s, strength = %s, magic = %s, speed = %s, defense = %s, logic = %s WHERE message_id = %s"
-        cursor.execute(query,(boss_data[1],boss_data[2],boss_data[3],boss_data[4],boss_data[5],boss_data[6],boss_data[7],boss_data[8],boss_data[9],boss_data[10],boss_data[11],boss_data[12],boss_data[0]))
+    def update_enemy(self,enemy_data):
+        query = "UPDATE enemies SET name = %s, weapon_id = %s, class = %s, level = %s, exp = %s, health = %s, max_health = %s, strength = %s, magic = %s, speed = %s, defense = %s, logic = %s WHERE message_id = %s"
+        cursor.execute(query,(enemy_data[1],enemy_data[2],enemy_data[3],enemy_data[4],enemy_data[5],enemy_data[6],enemy_data[7],enemy_data[8],enemy_data[9],enemy_data[10],enemy_data[11],enemy_data[12],enemy_data[0]))
         db.commit()
-        print(f"{boss_data[0]} has been updated")
+        print(f"{enemy_data[0]} has been updated")
 
-    def update_bank(self,bank_data):
+    def update_bank(self,user_id,amount):
         query = "UPDATE bank SET money = %s WHERE user_id = %s"
-        cursor.execute(query,(bank_data[1],bank_data[0]))
+        current_balance = self.get_bank(user_id)[1]
+        if amount > current_balance:
+            print(f"{user_id} has gained {amount-current_balance} dollars")
+        else:
+            print(f"{user_id} has lost {current_balance-amount} dollars")
+        cursor.execute(query,(amount,user_id))
         db.commit()
-        cursor.execute(query,(bank_data))
 
-    def remove_boss(self,msg_id):
-        cursor.execute("DELETE FROM bosses WHERE message_id", (msg_id))
+    def delete_enemy(self,msg_id):
+        cursor.execute("DELETE FROM enemies WHERE message_id", (msg_id))
         db.commit()
 
 
@@ -220,8 +226,8 @@ class Database:
         cursor.execute(query,(weapon_id,))
         return cursor.fetchone()
 
-    def get_boss(self,msg_id):
-        query = "SELECT * FROM bosses WHERE message_id = %s"
+    def get_enemy(self,msg_id):
+        query = "SELECT * FROM enemies WHERE message_id = %s"
         cursor.execute(query,(msg_id,))
         return cursor.fetchone()
 
