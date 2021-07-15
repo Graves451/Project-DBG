@@ -16,18 +16,35 @@ def hash_string(string_input):
     #used to return a relatively unique id with a length of 8 of the string
     return int(hashlib.sha256(string_input.encode('utf-8')).hexdigest(), 16) % 10**8
 
-db = mysql.connect(
-    host="localhost",
-    user="pi",
-    passwd="WUHANpja123",
-    database = "testdb"
-)
+#the read and write has been updated to this so that the connections requests doesn't crash the mysql server
+def read_execute(query,values):
+    con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "testdb")
+    cur = con.cursor()
+    answer = cur.execute(query,values)
+    cur.close()
+    con.close()
+    return answer
+
+def read_all_execute(query):
+    con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "testdb")
+    cur = con.cursor()
+    answer = cur.execute(query)
+    cur.close()
+    con.close()
+    return answer
+
+def write_execute(query,values):
+    con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "testdb")
+    cur.execute(query,values)
+    cur.close()
+    con.commit()
+    con.close()
 
 cursor = db.cursor(buffered = True)
 
 class Database:
     def setup(self):
-        #creates a table object for other users
+        db = connect
         cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT(11) NOT NULL PRIMARY KEY, daily DATETIME, weekly DATETIME, first DATE)")
         cursor.execute("CREATE TABLE IF NOT EXISTS characters (user_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11))")
         cursor.execute("CREATE TABLE IF NOT EXISTS inventories (user_id BIGINT(11) NOT NULL, item_id INT(11), amount INT(11))")
