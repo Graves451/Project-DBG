@@ -2,19 +2,13 @@ import random
 import database
 import hashlib
 import discord
+import logging
 
 db = database.Database()
 
 #give the bosses proper weapons
 
 #implement some kind system of ranged weapons for bows and mages
-
-'''
-Damage, the amount taken away from the enemy’s health with each attack.
-Damage(physical): (attacker_str - enemy_def)*weapon_power
-Damage(magical): (attacker_mag - enemy_log)*weapon_power
-
-'''
 
 #user: user_id,daily,weekly,first
 #              0      1        2       3       4    5      6         7          8        9     10      11      12
@@ -25,9 +19,31 @@ Damage(magical): (attacker_mag - enemy_log)*weapon_power
 #weapons item_id, type, power, crit, damage_type
 #usable: itemname, target, amount
 #graphics: graphic_name, value
+
+logging.basicConfig(handlers=[logging.FileHandler(filename="logs/TBG.log",
+                                                 encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
+                    datefmt="%F %A %T",
+                    level=logging.INFO)
+
+beginner_classes = ["Archer","Barbarian","Infantry","Tactician","Swordsmen"]
+
+intermediate_classes = ["Spearmen","Knight","Brigand","Mercenary","Dueler","Strategist","Crossbowmen"]
+
+advanced_classes = ["Assassin","Warrior","Great Knight","Wizard","Swordmaster","Sniper","Rocketeer"]
+
+weapons = {}
+
+def determine_enemy_class(level):
+    if level > 40:
+        return random.choice(database.advanced_classes)
+    if level > 20:
+        return random.choice(database.intermediate_classes)
+    return random.choice(database.beginner_classes)
+
 def generate_enemy(name,level,class_name,weapon_id):
     #used the 0 at the start as placement for the message id
-    enemy_data = [0, name, weapon_id, class_name, level, 0, 0, 0, 0, 0, 0, 0, 0]
+    enemy_data = [0, name, weapon_id, class_name, level, 0, 0, 0, 0, 0, 0, 0, 0,generate_enemy_loot(level),""]
     growth_rates = db.get_class(class_name)[1].split("-")
     for x in range(level):
         for num in range(len(growth_rates)):
@@ -36,20 +52,42 @@ def generate_enemy(name,level,class_name,weapon_id):
     enemy_data[6] = enemy_data[7]
     return enemy_data
 
+def generate_boss(name,level,class_name,weapon_id):
+    #used the 0 at the start as placement for the message id
+    boss_data = [0, name, weapon_id, class_name, level, 0, 0, 30, 10, 10, 10, 10, 10,generate_enemy_loot(level),""]
+    growth_rates = db.get_class(class_name)[1].split("-")
+    for x in range(level):
+        for num in range(len(growth_rates)):
+            if rng(float(growth_rates[num])):
+                boss_data[7+num]+=1
+    boss_data[6] = boss_data[7]
+    return boss_data
+
+def generate_class_weapon(class_name,level):
+    weapon_choice = random.choice(db.get_class(class_name)[4].split("-"))
+    return database.weapons[weapon_choice][int(min(level/80,0.99)*len(database.weapons[weapon_choice]))]
+
+def generate_enemy_loot(level):
+    return f"{str(int((random.randint(5,10)/10)*level))}.gold coin-{str(int((random.randint(7,10)/10)*level))}.exp"
+
 def generate_character(user_id, name, user_class, weapon_id):
     return (user_id, name, weapon_id, user_class, 1, 0, 15, 15, 6, 5, 7, 5, 3)
 
-def create_character_embed(char_data):
-    StatEmbed = discord.Embed(colour=discord.Colour.red(),description=f"`LVL` {str(char_data[4])}\n`EXP` {str(int(char_data[5]*100/next_level(char_data[5])))}%")
-    StatEmbed.set_author(name=char_data[3].upper())
-    stat_name = f"{str(char_data[6])}/{str(char_data[7])} ❤️"
-    stat_stats = f"`STR` {char_data[8]}\n`MAG` {char_data[9]}\n`SPD` {char_data[10]}\n`DEF` {char_data[11]}\n`LOG` {char_data[12]}"
-    StatEmbed.add_field(name=stat_name,value=stat_stats)
-    item_data = db.get_weapon(char_data[2])
-    StatEmbed.add_field(name=db.get_item(char_data[2])[1],value=f"`PWR` {item_data[2]}\n`CRT` {item_data[3]}")
-    return StatEmbed
+def change_class(character_data,target_class):
+    class_growth = db.get_class(target_class)[1].split("-")[1:]
+    stat_requirement = max(class_growth)
+    stat_requirements = []
+    for x in range(len(class_growth)):
+        if class_growth[x] == stat_requirement:
+            stat_requirements.append(x)
+    for num in range(len(stat_requirements)):
+        if character_data[8+stat_requirements[num]] >= 0.3*int(class_growth[stat_requirements[num]]):
+            character_data[3] = target_class
+            unequip_weapon(character_data)
+            return True
+    return False
 
-def level_check(user_data):
+def character_check(user_data):
     next_level_requirement = next_level(user_data[4])
     while user_data[5] >= next_level_requirement:
         user_data[5] -= next_level_requirement
@@ -59,28 +97,10 @@ def level_check(user_data):
             if rng(float(growth_rates[num])):
                 user_data[7+num]+=1
         next_level_requirement = next_level(user_data[4])
-        print(f"{str(user_data[0])} leveled up")
+        logging.info(f"{str(user_data[0])} leveled up")
+    user_data[6] = min(user_data[6],user_data[7])
+    user_data[6] = max(user_data[6],0)
     return user_data
-
-def change_class(character_data,target_class):
-    class_growth = db.get_class(target_class)[1].split("-")[1:]
-    stat_requirement = max(class_growth)
-    stat_requirements = []
-    print(f"max stat is {stat_requirement}")
-    for x in range(len(class_growth)):
-        if class_growth[x] == stat_requirement:
-            stat_requirements.append(x)
-    print(stat_requirements)
-    print(class_growth)
-    for num in range(len(stat_requirements)):
-        print(class_growth[stat_requirements[num]])
-        print(f"requirement for {num} is {0.4*int(class_growth[stat_requirements[num]])}")
-        print(f"charater's stat {character_data[8+stat_requirements[num]]}")
-        if character_data[8+stat_requirements[num]] >= 0.4*int(class_growth[stat_requirements[num]]):
-            character_data[3] = target_class
-            unequip_weapon(character_data)
-            return True
-    return False
 
 def get_class_attribute(class_name):
     return db.get_character(class_name)[3].split("-")
@@ -91,10 +111,11 @@ def unequip_weapon(character_data):
     character_data[2] = hash_string("fist")
     return character_data
 
-
 #would be nice to have something more complex here
 def next_level(current_level):
-    return 100
+    if current_level < 60:
+        return int(current_level*10.25)+100
+    return int(1.12**current_level)
 
 def get_class_weapons(class_name):
     return db.get_class(class_name)[4].split("-")

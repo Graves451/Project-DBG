@@ -1,0 +1,3 @@
+great-plains,5,5,2,120
+forest,8,10,2,120
+mountain,12,30,3,120
