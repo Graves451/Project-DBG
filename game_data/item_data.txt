@@ -1,0 +1,25 @@
+fist,0,weapon,hmmm where did my weapon go?,fist,2,1,physical
+gold coin,0,item,the currency of project TBG
+stone sword,100,weapon,big sword for a big boi,sword,5,2,physical
+iron sword,180,weapon,big sword for a big boi,sword,10,3,physical
+steel sword,400,weapon,big sword for a big boi,sword,13,4,physical
+tungsten sword,1500,weapon,big sword for a big boi,sword,15,6,physical
+stone spear,100,weapon,sharp stone at the end of a stick,spear,7,1,physical
+iron spear,170,weapon,sharp iron at the end of a stick,spear,12,2,physical
+steel spear,380,weapon,sharp steel at the end of a stick,spear,15,2,physical
+tungsten spear,1400,weapon,sharp tungsten at the end of a stick,spear,20,3,physical
+stone axe,100,weapon,not only useful for woodwork,axe,5,4,physical
+iron axe,175,weapon,not only useful for woodwork,axe,9,6,physical
+steel axe,360,weapon,not only useful for woodwork,axe,11,7,physical
+tungsten axe,1200,weapon,not only useful for woodwork,axe,14,10,physical
+bow,100,weapon,shoots at your enemy from afar,bow,7,2,physical
+longbow,210,weapon,shoots at your enemy from afar,bow,11,3,physical
+crossbow,450,weapon,shoots at your enemy from afar,bow,17,3,physical
+rocket launcher,2000,weapon,rain down rockets upon your foes,bow,25,7,physical
+fire magic,100,weapon,someone's gonna burn,tome,7,2,magical
+ice magic,450,weapon,someone’s gonna freeze,tome,11,2,magical
+small healing potion,40,usable,good for your health,6,10
+large healing potion,80,usable,great for your health,6,20
+red essence,100,usable,allows you to revive someone,6,100
+test seal,80,usable,enables you to change classes,6,0
+transportation ticket,100,usable,allows you to travel to new locations,6,0

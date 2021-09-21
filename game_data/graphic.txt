@@ -1,0 +1,42 @@
+Archer,https://cdn.discordapp.com/attachments/874451980867756052/882420040618639360/archer_2.gif
+Barbarian,https://cdn.discordapp.com/attachments/874451980867756052/882413456148533258/barbarian_1.gif
+Infantry,https://cdn.discordapp.com/attachments/874451980867756052/882416867988340766/early_spear_dude.gif
+Tactician,https://cdn.discordapp.com/attachments/874451980867756052/882408825087467571/tactican.gif
+Swordsmen,https://cdn.discordapp.com/attachments/874451980867756052/882410323158642728/swordsmen_3.gif
+Spearmen,https://cdn.discordapp.com/attachments/874451980867756052/882417662813151252/solider_3.gif
+Knight,https://cdn.discordapp.com/attachments/874451980867756052/882412308041728090/knight.gif
+Brigand,https://cdn.discordapp.com/attachments/874451980867756052/882415582866190436/barbarian.gif
+Mercenary,https://cdn.discordapp.com/attachments/874451980867756052/882418401191022632/mercenary_1.gif
+Strategist,https://cdn.discordapp.com/attachments/874451980867756052/882407063844716564/strat_man.gif
+Longbowmen,https://cdn.discordapp.com/attachments/874451980867756052/882420019131195422/longbowmen.gif
+Warrior,https://cdn.discordapp.com/attachments/874451980867756052/882416126536085564/warrior.gif
+Wizard,https://cdn.discordapp.com/attachments/874451980867756052/882414435979890768/wizard.gif
+Sniper,https://cdn.discordapp.com/attachments/874451980867756052/882420876337901568/sniper_2.gif
+Warlord,https://cdn.discordapp.com/attachments/874451980867756052/882448724956176404/victor.gif
+Sharpshooter,https://cdn.discordapp.com/attachments/874451980867756052/886408137622577182/sharpshooter.gif
+General,https://cdn.discordapp.com/attachments/874451980867756052/886421095811530752/general.gif
+fist,882471872086822933
+stone sword,882471872086822933
+iron sword,882471872086822933
+steel sword,882471872086822933
+tungsten sword,882471872086822933
+stone spear,882480499963084820
+iron spear,882480499963084820
+steel spear,882480499963084820
+tungsten spear,882480499963084820
+stone axe,883142191516643378
+iron axe,883142191516643378
+steel axe,883142191516643378
+tungsten axe,883142191516643378
+bow,883148952705310740
+longbow,883148952705310740
+crossbow,883148952705310740
+rocket launcher,883148952705310740
+fire magic,885755497632911401
+ice magic,885755497632911401
+small healing potion,871644831338856518
+large healing potion,871644849705730098
+red essence,871662026739568650
+test seal,871644804071714866
+transportation ticket,871644818479124520
+gold coin,822330641559191573
