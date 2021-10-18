@@ -16,13 +16,18 @@ handler.setLevel(logging.INFO)
 Game_logger.addHandler(handler)
 
 class battle:
-    def __init__(self,character1,character2,msg):
+    def __init__(self,character1,character2,msg,player):
         self.character1 = character1
         self.character2 = character2
         self.constestants = [character1, character2]
+        self.attributes = {character1[0]:[],character2[0]:[]}
         self.msg = msg
+        self.player = player
         self.combat_log = ""
         random.shuffle(self.constestants)
+        for character in self.constestants:
+            self.attributes[character[0]].append(db.get_item(character[2])[3])
+            self.attributes[character[0]].extend(db.get_class(character[3])[3].split("-"))
 
     async def run(self):
         self.combat()
@@ -35,9 +40,15 @@ class battle:
             defender = self.constestants[1]
             if defender[6] == 0 or attacker[6] == 0:
                 return
+            attacker_weapon = list(db.get_weapon(attacker[2]))
+            counter_data = db.get_counter(attacker[2])
+            if counter_data is not None:
+                if set(counter_data[1].split("-")) & set(self.attributes[defender[0]]):
+                    attacker_weapon[2]+=int(counter_data[2])
+                    attacker_weapon[3]+=int(counter_data[3])
             if not self.dodge(attacker,defender):
-                damage = max(self.get_damage(attacker,defender),0)
-                if self.crit(attacker,defender):
+                damage = max(self.get_damage(attacker,defender,attacker_weapon),0)
+                if self.crit(attacker,defender,attacker_weapon):
                     damage*=2
                     self.combat_log += f"{attacker[1]} dealed {damage}💢 \n"
                 else:
@@ -54,8 +65,7 @@ class battle:
                 self.combat_log += f"{defender[1]} has been killed 💀 \n"
             self.constestants.reverse()
 
-    def get_damage(self,attacker,defender):
-        attacker_weapon = db.get_weapon(attacker[2])
+    def get_damage(self,attacker,defender,attacker_weapon):
         if attacker_weapon[4] == "physical":
             return attacker[8]+attacker_weapon[2]-int(defender[11]*0.8)
         return attacker[9]+attacker_weapon[2]-int(defender[12]*0.8)
@@ -67,8 +77,7 @@ class battle:
 
 #              0      1        2       3       4    5      6         7          8        9     10      11      12
 #character: user_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic
-    def crit(self,attacker,defender):
-        attacker_weapon = db.get_weapon(attacker[2])
+    def crit(self,attacker,defender,attacker_weapon):
         if attacker_weapon[4] == "physical":
             return rng(attacker[8]+attacker_weapon[3]-defender[11])
         return rng(attacker[9]+attacker_weapon[3]-defender[12])
@@ -87,8 +96,8 @@ class battle:
                         update_money(self.character1[0],int(item_data[0]))
                     else:
                         db.add_item(self.character1[0],hash_string(item_data[1]),int(item_data[0]))
-        self.character1 = await character.character_check(self.character1,self.msg)
-        self.character2 = await character.character_check(self.character2,self.msg)
+        self.character1 = await character.character_check(self.character1,self.player,self.msg)
+        self.character2 = await character.character_check(self.character2,self.player,self.msg)
 
     async def combat_result_embed(self):
         if self.combat_log == "":

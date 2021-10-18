@@ -9,12 +9,20 @@ Brigand,https://cdn.discordapp.com/attachments/874451980867756052/88241558286619
 Mercenary,https://cdn.discordapp.com/attachments/874451980867756052/882418401191022632/mercenary_1.gif
 Strategist,https://cdn.discordapp.com/attachments/874451980867756052/882407063844716564/strat_man.gif
 Longbowmen,https://cdn.discordapp.com/attachments/874451980867756052/882420019131195422/longbowmen.gif
+Mounted Archer,https://cdn.discordapp.com/attachments/874451980867756052/889051070448414760/mounted_archer.gif
 Warrior,https://cdn.discordapp.com/attachments/874451980867756052/882416126536085564/warrior.gif
+Spearmaster,https://cdn.discordapp.com/attachments/874451980867756052/889043604331446282/spear_dude.gif
 Wizard,https://cdn.discordapp.com/attachments/874451980867756052/882414435979890768/wizard.gif
 Sniper,https://cdn.discordapp.com/attachments/874451980867756052/882420876337901568/sniper_2.gif
+Ninja,https://cdn.discordapp.com/attachments/874451980867756052/889023034533478410/ninja.gif
+Rocketeer,https://cdn.discordapp.com/attachments/874451980867756052/888928195460620358/peasant_man.gif
+Mounted Knight,https://cdn.discordapp.com/attachments/874451980867756052/889038893863817216/great_knight.gif
 Warlord,https://cdn.discordapp.com/attachments/874451980867756052/882448724956176404/victor.gif
 Sharpshooter,https://cdn.discordapp.com/attachments/874451980867756052/886408137622577182/sharpshooter.gif
 General,https://cdn.discordapp.com/attachments/874451980867756052/886421095811530752/general.gif
+Gamer,https://cdn.discordapp.com/attachments/874451980867756052/889022722401779723/fortnite_ninja.gif
+Viking,https://cdn.discordapp.com/attachments/874451980867756052/888966797863301120/berserker.gif
+Taoist,https://cdn.discordapp.com/attachments/874451980867756052/889385143054270514/taoist.gif
 fist,882471872086822933
 stone sword,882471872086822933
 iron sword,882471872086822933
@@ -34,9 +42,23 @@ crossbow,883148952705310740
 rocket launcher,883148952705310740
 fire magic,885755497632911401
 ice magic,885755497632911401
+wind magic,885755497632911401
+sacred magic,885755497632911401
+broadsword,891554137605546005
+quarterstaff,891556338319097867
+poleaxe,891556325245464616
+yumi,891556348075077662
+dark magic,891556354832105502
 small healing potion,871644831338856518
 large healing potion,871644849705730098
 red essence,871662026739568650
 test seal,871644804071714866
 transportation ticket,871644818479124520
+water,899092808865042452
+vodka,891819844742299648
+whiskey,891819844742299648
+tequila,891819844742299648
+sake,891819844742299648
+gin,891819844742299648
+beer,891819844742299648
 gold coin,822330641559191573

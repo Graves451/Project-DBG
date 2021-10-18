@@ -20,14 +20,14 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="logs/TBG.log",
 
 beginner_classes = ["Archer","Barbarian","Infantry","Tactician","Swordsmen"]
 
-intermediate_classes = ["Spearmen","Knight","Brigand","Mercenary","Dueler","Strategist","Longbowmen"]
+intermediate_classes = ["Spearmen","Knight","Brigand","Mercenary","Dueler","Strategist","Longbowmen","Mounted Archer"]
 
-advanced_classes = ["Warrior","Wizard","Sniper"]
+advanced_classes = ["Warrior","Wizard","Sniper","Knight","Spearmaster","Ninja","Rocketeer","Mounted Knight"]
 
 class_road_map = {
-    "bow":["Archer","Longbowmen","Sniper"],
-    "sword":["Swordsmen","Mercenary","Knight"],
-    "spear":["Infantry","Spearmen"],
+    "bow":["Archer","Longbowmen-Mounted Archer","Sniper-Ninja-Rocketeer"],
+    "sword":["Swordsmen","Mercenary","Knight-Ninja-Mounted Knight"],
+    "spear":["Infantry","Spearmen","Spearmaster-Mounted Knight"],
     "axe":["Barbarian","Brigand","Warrior"],
     "tome":["Tactician","Strategist","Wizard"]
 }
@@ -46,6 +46,8 @@ def generate_enemy(name,level):
     weapon_type = random.choice(list(class_road_map.keys()))
     num_classes = min(int(level/20)+1,len(class_road_map[weapon_type]))
     classes = class_road_map[weapon_type][:num_classes]
+    for num in range(len(classes)):
+        classes[num] = random.choice(classes[num].split("-"))
     weapon_thing = generate_class_weapon(classes[-1],level)
     weapon_id = game.hash_string(weapon_thing)
     current_level = 0
@@ -83,10 +85,20 @@ def generate_enemy_loot(level):
     return f"{str(int((random.randint(4,7)/10)*level))}.gold coin-{str(int((random.randint(15,20)/10)*level))}.exp"
 
 def generate_boss_loot(level):
-    return f"{str(int((level*4)**1.25))}.gold coin-{str(int((level*10)**1.25))}.exp"
+    return f"{str(int((level*4)))}.gold coin-{str(int((level*10)**1.25))}.exp"
 
 def generate_character(user_id, name, user_class, weapon_id, resets):
     return (user_id, name, weapon_id, user_class, 1, 0, 15+resets, 15+resets, 6+resets, 5+resets, 7+resets, 5+resets, 3+resets)
+
+def can_equip(char_data,target_weapon):
+    if target_weapon[4] == "physical":
+        if char_data[8] >= int(target_weapon[2]*1.25):
+            return True,0
+        return False,f"you need at least {int(target_weapon[2]*0.5)} STR to equip it"
+    if target_weapon[4] == "magical":
+        if char_data[9] >= int(target_weapon[2]*1.3):
+            return True,0
+        return False,f"you need at least {int(target_weapon[2]*0.5)} MAG to equip it"
 
 def change_class(character_data,target_class):
     class_growth = db.get_class(target_class)[1].split("-")[1:]
@@ -107,7 +119,7 @@ def class_requirement(target_class):
             stat_requirements.append((x,0.25*int(class_growth[x])))
     return stat_requirements
 
-async def character_check(user_data,msg):
+async def character_check(user_data,user,msg):
     next_level_requirement = next_level(user_data[4])
     while user_data[5] >= next_level_requirement:
         user_data[5] -= next_level_requirement
@@ -119,7 +131,7 @@ async def character_check(user_data,msg):
         next_level_requirement = next_level(user_data[4])
         logging.info(f"{str(user_data[0])} leveled up")
         user_data[6] = user_data[7]
-        await msg.channel.send(f"{msg.author.mention} leveled up, health also healed back to full!")
+        await msg.channel.send(f"{user.mention} leveled up, health also healed back to full!")
     user_data[6] = min(user_data[6],user_data[7])
     user_data[6] = max(user_data[6],0)
     return user_data

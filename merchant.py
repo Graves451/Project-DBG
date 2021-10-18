@@ -1,5 +1,6 @@
 import database
 import game
+import json
 
 import discord
 import logging
@@ -21,6 +22,11 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="logs/merchant.log",
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
                     datefmt="%F %A %T",
                     level=logging.INFO)
+
+with open("/home/pi/Atom/TBG/game_data/bot_token.json","r") as f:
+    file = json.load(f)
+    token = file["Merchant"]
+    f.close()
 
 db = database.Database()
 
@@ -45,7 +51,9 @@ class merchant:
 
         @self.client.event
         async def on_command_error(ctx, error):
-            return
+            if isinstance(error, commands.CommandNotFound):
+                return
+            raise error
 
         @tasks.loop(hours=3.0)
         async def rotate_items():
@@ -54,10 +62,6 @@ class merchant:
         @self.client.command()
         async def help(ctx):
             await ctx.message.channel.send(help_string)
-
-        @self.client.command()
-        async def refresh(ctx):
-            self.shop.generate_items()
 
         @self.client.command()
         async def shop(ctx):
@@ -77,6 +81,9 @@ class merchant:
                 amount = int(message_contents[-1])
             else:
                 item_name = " ".join(message_contents[1:])
+            if item_name in database.forbidden_items:
+                await ctx.message.channel.send(f"you can't buy {item_name} here")
+                return
             if db.get_inventory(ctx.message.author.id)[1]+amount > 20:
                 await ctx.message.channel.send("you can't have over 20 items")
                 return
@@ -118,9 +125,6 @@ class merchant:
                 logging.info(f"{str(user.id)} has removed {str(amount)} X {item_name}")
                 return
             await message.channel.send(f"you don't have enough {item_name}, my friend")
-
-
-token = "NzU0MTIzNTAwMjgwNzQxOTg5.X1wKPQ.EUzyQREJIhfmqwsk-15JE096FWE"
 
 if __name__ == "__main__":
     MerchantBot = merchant(token)

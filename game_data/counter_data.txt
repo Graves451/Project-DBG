@@ -1,0 +1,5 @@
+broadsword,axe,5,1
+quarterstaff,bows,5,2
+poleaxe,spear,5,2
+yumi,armored,6,1
+dark magic,horse-armored,5,2
