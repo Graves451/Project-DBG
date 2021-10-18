@@ -8,7 +8,7 @@ handler = logging.FileHandler('logs/database.log')
 handler.setLevel(logging.INFO)
 DB_logger.addHandler(handler)
 
-#user: user_id,daily,weekly,first,progress,resets
+#user: user_id,daily,weekly,first,progress,resets,drinks
 #              0      1        2       3       4    5      6         7          8        9     10      11      12
 #character: user_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic
 #enemies: message_id, name, weapon_id, class, level, exp, health, max_health, strength, magic, speed, defense, logic, loot, combat_log
@@ -17,14 +17,17 @@ DB_logger.addHandler(handler)
 #weapons item_id, type, power, crit, damage_type
 #usable: itemname, target, amount
 #graphics: graphic_name, value
+#counters: item_id, targets, damage, crit
+#timer: user_id, timer_name, last
+
 
 beginner_classes = ["Archer","Barbarian","Infantry","Tactician","Swordsmen"]
 
-intermediate_classes = ["Spearmen","Brigand","Mercenary","Strategist","Longbowmen"]
+intermediate_classes = ["Spearmen","Brigand","Mercenary","Strategist","Longbowmen","Mounted Archer"]
 
-advanced_classes = ["Warrior","Wizard","Sniper","Knight"]
+advanced_classes = ["Warrior","Wizard","Sniper","Knight","Spearmaster","Ninja","Rocketeer","Mounted Knight"]
 
-boss_classes = ["Warlord","Sharpshooter","General"]
+boss_classes = ["Warlord","Sharpshooter","General","Viking","Taoist","Gamer"]
 
 weapons = {
     "sword":[],
@@ -34,7 +37,7 @@ weapons = {
     "tome":[]
 }
 
-forbidden_items = ["fist","gold coin"]
+forbidden_items = ["fist","gold coin","vodka","whisky","gin","sake","beer","tequila","water"]
 
 abbreviations = [("shp","small healing potion"),("lhp","large healing potion")]
 
@@ -45,7 +48,7 @@ def hash_string(string_input):
 #the read and write has been updated to this so that the connections requests doesn't crash the mysql server
 def read_execute(query,values):
     con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "TBG")
-    cur = con.cursor()
+    cur = con.cursor(buffered=True)
     cur.execute(query,values)
     answer = cur.fetchone()
     cur.close()
@@ -54,7 +57,7 @@ def read_execute(query,values):
 
 def read_all_execute(query,values):
     con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "TBG")
-    cur = con.cursor()
+    cur = con.cursor(buffered=True)
     cur.execute(query,values)
     answer = cur.fetchall()
     cur.close()
@@ -63,7 +66,7 @@ def read_all_execute(query,values):
 
 def write_execute(query,values):
     con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "TBG")
-    cur = con.cursor()
+    cur = con.cursor(buffered=True)
     cur.execute(query,values)
     cur.close()
     con.commit()
@@ -71,7 +74,7 @@ def write_execute(query,values):
 
 def execute(query):
     con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "TBG")
-    cur = con.cursor()
+    cur = con.cursor(buffered=True)
     cur.execute(query)
     cur.close()
     con.commit()
@@ -79,16 +82,18 @@ def execute(query):
 
 class Database:
     def setup(self):
-        execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT(11) NOT NULL PRIMARY KEY, daily DATETIME, weekly DATETIME, first DATE, progress VARCHAR(255), resets INT(11))")
+        execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT(11) NOT NULL PRIMARY KEY, daily DATETIME, weekly DATETIME, first DATE, progress VARCHAR(255), resets INT(11), drinks INT(11))")
         execute("CREATE TABLE IF NOT EXISTS characters (user_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11))")
         execute("CREATE TABLE IF NOT EXISTS inventories (user_id BIGINT(11) NOT NULL, item_id INT(11), amount INT(11))")
         execute("CREATE TABLE IF NOT EXISTS bank (user_id BIGINT(11) NOT NULL, money BIGINT(11))")
         execute("CREATE TABLE IF NOT EXISTS enemies (message_id BIGINT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), weapon_id INT(11), class VARCHAR(255), level INT(11), exp INT(11), health INT(11), max_health INT(11), strength INT(11), magic INT(11), speed INT(11), defense INT(11), logic INT(11), loot VARCHAR(255), combat_log VARCHAR(255))")
+        execute("CREATE TABLE IF NOT EXISTS timer (user_id BIGINT(11) NOT NULL, timer_name VARCHAR(255), last DATETIME)")
         execute("CREATE TABLE IF NOT EXISTS classes (class_name VARCHAR(255) NOT NULL PRIMARY KEY, growth_rate VARCHAR(255), description VARCHAR(255), attributes VARCHAR(255), weapon_choices VARCHAR(255))")
         execute("CREATE TABLE IF NOT EXISTS items (item_id INT(11) NOT NULL PRIMARY KEY, name VARCHAR(255), cost INT(11), type VARCHAR(255), description VARCHAR(255))")
         execute("CREATE TABLE IF NOT EXISTS weapons (item_id INT(11) NOT NULL PRIMARY KEY, type VARCHAR(255), power INT(11), crit INT(11), damage_type VARCHAR(255))")
         execute("CREATE TABLE IF NOT EXISTS usables (item_id INT(11) NOT NULL PRIMARY KEY, target INT(11), amount INT(11))")
         execute("CREATE TABLE IF NOT EXISTS graphics (graphic_name VARCHAR(255) NOT NULL PRIMARY KEY, value VARCHAR(255))")
+        execute("CREATE TABLE IF NOT EXISTS counters (item_id VARCHAR(255) NOT NULL PRIMARY KEY, targets VARCHAR(255), damage INT(11), crit INT(11))")
 
     def load_game_data(self):
         #clears the tables everytime
@@ -115,6 +120,12 @@ class Database:
             line = line_input.split(",")
             self.insert_graphic(line[0],line[1].replace("\n",""))
 
+        #counters: item_id, targets, damage, crit
+        file_data = open("game_data/counter_data.txt","r")
+        for line_input in file_data.read().splitlines():
+            line = line_input.split(",")
+            self.insert_counter(line[0],line[1],line[2],line[3].replace("\n",""))
+
     def clear_game_data(self):
         execute("DELETE FROM items")
         execute("DELETE FROM classes")
@@ -122,13 +133,15 @@ class Database:
         execute("DELETE FROM usables")
         execute("DELETE FROM enemies")
         execute("DELETE FROM graphics")
+        execute("DELETE FROM counters")
+        execute("DELETE FROM timer")
 
 #####################################################################################################################################################
 
     def add_user(self,user_id):
         now = datetime.datetime.now()
-        query = "INSERT IGNORE INTO users (user_id, daily, weekly, first, progress, resets) VALUES (%s, %s, %s, %s, %s, %s)"
-        values = (user_id, now-datetime.timedelta(days=1), now-datetime.timedelta(days=7), now.date(), "", 0)
+        query = "INSERT IGNORE INTO users (user_id, daily, weekly, first, progress, resets, drinks) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        values = (user_id, now-datetime.timedelta(days=1), now-datetime.timedelta(days=7), now.date(), "", 0, 0)
         write_execute(query,values)
         DB_logger.info(str(user_id)+" has been added")
 
@@ -155,6 +168,10 @@ class Database:
         query = "INSERT IGNORE INTO bank (user_id, money) VALUES (%s, %s)"
         write_execute(query, (user_id,amount))
 
+    def add_timer(self,user_id,timer_name,last):
+        query = "INSERT IGNORE INTO timer (user_id, timer_name, last) VALUES (%s, %s, %s)"
+        write_execute(query, (user_id,timer_name,last))
+
     #under construction
     #enemies: message_id, name, weapon_id, class, level, health, max_health, strength, magic, speed, defense, logic
     def add_enemy(self,enemy_data):
@@ -178,12 +195,15 @@ class Database:
     def insert_graphic(self,graphic_name, value):
         write_execute("INSERT IGNORE INTO graphics (graphic_name, value) VALUES (%s, %s)", (graphic_name, value))
 
+    def insert_counter(self,item_id, targets, damage, crit):
+        write_execute("INSERT IGNORE INTO counters (item_id, targets, damage, crit) VALUES (%s, %s, %s, %s)", (hash_string(item_id), targets, damage, crit))
+
 #####################################################################################################################################################
 
 #user: user_id,faction,daily,weekly,first
     def update_user(self,user_data):
-        query = "UPDATE users SET daily = %s, weekly = %s, first = %s, progress = %s, resets = %s WHERE user_id = %s"
-        write_execute(query,(user_data[1],user_data[2],user_data[3],user_data[4],user_data[5],user_data[0]))
+        query = "UPDATE users SET daily = %s, weekly = %s, first = %s, progress = %s, resets = %s, drinks = %s WHERE user_id = %s"
+        write_execute(query,(user_data[1],user_data[2],user_data[3],user_data[4],user_data[5],user_data[6],user_data[0]))
         DB_logger.info(f"{user_data[0]} has been updated")
 
 #character: user_id, name, money, class, level, exp, health, max_health, strength, magic, speed, defense, logic
@@ -206,9 +226,15 @@ class Database:
             DB_logger.info(f"{user_id} has lost {current_balance-amount} dollars")
         write_execute(query,(amount,user_id))
 
+    def update_timer(self,user_id,timer_name,last):
+        query = "UPDATE timer SET last = %s WHERE user_id = %s AND timer_name = %s"
+        write_execute(query, (last,user_id,timer_name))
+
+    def clear_inventory(self,user_id):
+        write_execute("DELETE FROM inventories WHERE user_id = %s",(user_id,))
+
     def delete_enemy(self,msg_id):
         write_execute("DELETE FROM enemies WHERE message_id = %s", (msg_id,))
-
 
 #####################################################################################################################################################
 
@@ -224,9 +250,9 @@ class Database:
         query = "SELECT * FROM users WHERE user_id = %s"
         return read_execute(query,(str(user_id),))
 
-    def get_user_item(self,user_id,item_id):
-        query = "SELECT * FROM inventories WHERE user_id = %s AND item_id = %s"
-        return read_execute(query,(user_id,item_id))
+    def get_timer(self,user_id,timer_name):
+        query = "SELECT * FROM timer WHERE user_id = %s AND timer_name = %s"
+        return read_execute(query,(user_id,timer_name))
 
     def get_character(self,user_id):
         query = "SELECT * FROM characters WHERE user_id = %s"
@@ -245,6 +271,10 @@ class Database:
             num += items[2]
         return ans, num
 
+    def get_user_item(self,user_id,item_id):
+        query = "SELECT * FROM inventories WHERE user_id = %s AND item_id = %s"
+        return read_execute(query,(user_id,item_id))
+
     def get_class(self,classname):
         query = "SELECT * FROM classes WHERE class_name = %s"
         return read_execute(query,(classname,))
@@ -260,6 +290,10 @@ class Database:
     def get_graphic(self,graphic_name):
         query = "SELECT * FROM graphics WHERE graphic_name = %s"
         return read_execute(query,(graphic_name,))
+
+    def get_counter(self,weapon_id):
+        query = "SELECT * FROM counters WHERE item_id = %s"
+        return read_execute(query,(weapon_id,))
 
 #####################################################################################################################################################
 
@@ -282,14 +316,19 @@ class Database:
         for table in tables:
             print(table)
 
-    def table_values(self,table):
+    def do_something(self):
+        execute("ALTER TABLE users ADD COLUMN drinks INT(11) NOT NULL;")
+
+    def table_values(self,table_name):
         con = mysql.connect(host="localhost",user="pi",passwd="WUHANpja123",database = "TBG")
         cur = con.cursor()
-        cur.execute("SELECT * FROM enemies")
+        cur.execute(f"SELECT * FROM {table_name}")
         answer = cur.fetchall()
         cur.close()
         con.close()
-        print(answer)
+        for lst in answer:
+            print(lst)
+            print(len(lst))
 
     def get_info(self):
         tables = read_all_execute("DESCRIBE items","")

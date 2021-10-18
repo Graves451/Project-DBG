@@ -1,6 +1,7 @@
 import database
 import character
 import game
+import json
 
 import discord
 from discord.ext.commands import Bot
@@ -17,7 +18,10 @@ import logging
 
 #still needs to work on shop and balancing and adding new items
 
-token = "NjEzMTc4MDQwMDMzNDc2NjE5.XVtIjQ.CpuCgjgWJNHsT1WwmUoNRNy8I2o"
+with open("/home/pi/Atom/TBG/game_data/bot_token.json","r") as f:
+    file = json.load(f)
+    token = file["DBG"]
+    f.close()
 
 id = {
     "guild":811159707757707304,
@@ -25,7 +29,10 @@ id = {
         "great-plains":877292758979727390,
         "greater-plains":878788939966730270,
         "forest":877292847215292526,
-        "mountain":877292917859954688
+        "mountain":877292917859954688,
+        "shores":889386108272668673,
+        "prairies":889221371253649458,
+        "valley":889376305156616252
     },
     "role":{
         "First Floor":877285049324679188,
@@ -38,6 +45,7 @@ id = {
 command_prefix = "."
 
 help_string = '''```
+DBG commands:
 .ping    returns the ping of the bot
 .daily   gives the player 50 gold coins
 .weekly  gives the player 100 gold coins
@@ -49,10 +57,22 @@ help_string = '''```
 .use <target_item>     uses a consumable item
 .change <target_class> changes the user to the target class (needs test seal)
 .info <target_name>    gives you valuable information
-.reset (needs lvl.60)  resets your character to level 1 and 200 gold, with small permanent stat increases
+.prestige (needs lvl.60)  resets your character to level 1 and 200 gold, with small permanent stat increases
 
 .battle  spawns an enemy for you to fight
-.raid    costs 100 dollars and spawns a boss
+.raid    costs 100 dollars and spawns a boss (60m cooldown)
+
+Merchant commands:
+.shop    returns what's current in shop
+.buy <item> <amount>  buy a certain amount of items
+.sell <item> <amount> sell a certain amount of items
+
+The shop rotates every 3 hours
+
+Karl commands:
+.menu   returns a menu of all alcoholic drinks
+.order <alcohol_name>  buy an alcoholic drink from Karl
+.drink  Karl gives you free water (30m) cooldown
 ```'''
 
 stats_target = ["HP","Max HP","STR","MAG","SPD","DEF","LOG"]
@@ -175,18 +195,24 @@ class TBG:
         async def on_reaction_add(reaction,user):
             if user != self.client.user:
                 msg = reaction.message
-                if db.get_enemy(msg.id) is not None and reaction.emoji == "⚔️":
-                    fight = game.battle(list(db.get_character(user.id)),list(db.get_enemy(msg.id)),reaction.message)
+                if db.get_enemy(msg.id) is not None and reaction.emoji == "⚔️" or reaction.emoji == "💢":
+                    player_character = list(db.get_character(user.id))
+                    if reaction.emoji == "💢":
+                        player_character[8]+=5
+                        player_character[10]-=6
+                    fight = game.battle(player_character,list(db.get_enemy(msg.id)),reaction.message,user)
                     await fight.run()
                     player_character, enemy_character = fight.get_characters()
-                    if player_character[6] == 0:
-                        db.update_bank(user.id,int(db.get_bank(user.id)[1]*0.9))
+                    if reaction.emoji == "💢":
+                        player_character[8]-=5
+                        player_character[10]+=6
                     db.update_character(player_character)
                     if enemy_character[6] == 0:
                         db.delete_enemy(msg.id)
                         if enemy_character[1] == "boss":
                             user_data = list(db.get_user(user.id))
-                            user_data[4]+=f"{reaction.message.channel.name}."
+                            if enemy_character[3] not in user_data[4]:
+                                user_data[4] += f"{enemy_character[3]}."
                             db.update_user(user_data)
                         await msg.edit(embed=self.create_enemy_embed(enemy_character))
                         return
@@ -198,7 +224,20 @@ class TBG:
             if isinstance(error, commands.CommandOnCooldown):
                 await ctx.send(f'{ctx.author.mention} {ctx.message.content} is on a {str(datetime.timedelta(seconds=int(error.retry_after)))}s cooldown')
                 return
+            if isinstance(error, commands.CommandNotFound):
+                return
             raise error
+
+        @self.client.command()
+        async def register(ctx):
+            user = ctx.message.author
+            if db.get_bank(user.id) is None:
+                db.add_user(user.id)
+            if db.get_character(user.id) is None:
+                db.add_character(character.generate_character(user.id,user.display_name,"swordsmen",game.hash_string("stone sword"),0))
+            if db.get_bank(user.id) is None:
+                db.add_bank(user.id,100)
+            await ctx.message.channel.send(f"{user.name} has been registered")
 
         @self.client.command()
         async def ping(ctx):
@@ -249,27 +288,39 @@ class TBG:
         async def bank(ctx):
             await ctx.message.channel.send(f"You have {db.get_bank(ctx.message.author.id)[1]}{self.get_discord_emoji(822330641559191573)}")
 
-        @commands.cooldown(2,5)
+        @commands.cooldown(2,4)
         @self.client.command()
         async def battle(ctx):
             if ctx.message.channel.id not in id["channel"].values():
                 await ctx.message.channel.send("This is not a place for battle")
                 return
             else:
-                level = 5
+                level = db.get_character(ctx.message.author.id)[4]+5
                 if ctx.message.channel.id == id["channel"]["great-plains"] or ctx.message.channel.id == id["channel"]["greater-plains"]:
-                    level = random.randint(5,20)
+                    level += random.randint(0,4)
+                    level = min(19,level)
                 elif ctx.message.channel.id == id["channel"]["forest"]:
-                    level = random.randint(20,40)
+                    level += random.randint(0,8)
+                    level = min(39,level)
                 elif ctx.message.channel.id == id["channel"]["mountain"]:
-                    level = random.randint(40,70)
+                    level += random.randint(0,12)
+                    level = min(59,level)
+                elif ctx.message.channel.id == id["channel"]["prairies"]:
+                    level += random.randint(0,15)
+                    level = min(65,level)
+                elif ctx.message.channel.id == id["channel"]["shores"]:
+                    level += random.randint(0,12)
+                    level = min(70,level)
+                elif ctx.message.channel.id == id["channel"]["valley"]:
+                    level += random.randint(0,10)
+                    level = min(75,level)
                 enemy_data = character.generate_enemy("enemy",level)
-                print(enemy_data)
                 enemy_embed = self.create_enemy_embed(enemy_data)
                 msg = await ctx.message.channel.send(embed=enemy_embed)
                 enemy_data[0] = msg.id
                 db.add_enemy(enemy_data)
                 await msg.add_reaction("⚔️")
+                await msg.add_reaction("💢")
 
         @self.client.command()
         async def prestige(ctx):
@@ -286,35 +337,58 @@ class TBG:
             db.update_character(char_data)
             db.update_bank(user.id,-db.get_bank(user.id)[1])
             db.update_bank(user.id,200)
-            await ctx.message.channel.send(f"{user.mention} have been reset to level 1, and gained some bonus permanent {num} to all stats, and you get 200 gold coins to start off")
-            return
+            db.clear_inventory(user.id)
+            await ctx.message.channel.send(f"{user.mention} have been reset to level 1, and gained some bonus permanent {num} to all stats, and your inventory has been cleared, so here's 200 gold coins to start off ")
 
-        @commands.cooldown(1,3600)
         @self.client.command()
         async def raid(ctx):
             level = 5
+            user = ctx.message.author
+            if ctx.message.channel.id not in id["channel"].values():
+                await ctx.message.channel.send("This is not a place for battle")
+                return
+            if "red essence" not in db.get_inventory(user.id)[0].keys():
+                await ctx.message.channel.send("you need red essence to raid")
+                return
+            if db.get_character(user.id)[4] < level:
+                await ctx.message.channel.send(f"you need to be at least level {level} to challenge this boss")
+                return
+            timer_data = db.get_timer(user.id,ctx.message.channel.id)
+            if timer_data is not None:
+                dif = datetime.datetime.now()-timer_data[2]
+                if dif.seconds < 3600:
+                    await ctx.message.channel.send(f"{str(datetime.timedelta(seconds=3600-int(dif.total_seconds())))} left")
+                    return
+                else:
+                    db.update_timer(user.id,ctx.message.channel.id,datetime.datetime.now())
+            else:
+                db.add_timer(user.id,ctx.message.channel.id,datetime.datetime.now())
             if ctx.message.channel.id == id["channel"]["great-plains"]:
                 character_class = "Warlord"
                 level = 20
             elif ctx.message.channel.id == id["channel"]["forest"]:
                 character_class = "Sharpshooter"
-                level = 40
+                level = 30
             elif ctx.message.channel.id == id["channel"]["mountain"]:
                 character_class = "General"
+                level = 40
+            elif ctx.message.channel.id == id["channel"]["prairies"]:
+                character_class = "Gamer"
+                level = 40
+            elif ctx.message.channel.id == id["channel"]["shores"]:
+                character_class = "Viking"
+                level = 50
+            elif ctx.message.channel.id == id["channel"]["valley"]:
+                character_class = "Taoist"
                 level = 60
-            user = ctx.message.author
-            if db.get_character(user.id)[4] < level:
-                await ctx.message.channel.send(f"you need to be at least level {level} to challenge this boss")
-                return
-            if not game.update_money(user.id,-100):
-                await ctx.message.channel.send("you need at least 100 coins to challenge the boss")
-                return
             boss_data = character.generate_boss("boss",level,character_class,game.hash_string(character.generate_class_weapon(character_class,level)))
             boss_embed = self.create_enemy_embed(boss_data)
+            db.add_item(user.id,game.hash_string("red essence"),-1)
             msg = await ctx.message.channel.send("a boss fight ig")
             thread = await msg.create_thread(name="thread for ur boss fight")
             boss_msg = await thread.send(embed=boss_embed)
             await boss_msg.add_reaction("⚔️")
+            await boss_msg.add_reaction("💢")
             boss_data[0] = boss_msg.id
             db.add_enemy(boss_data)
             TBG_logger.info(f"spawning a {character_class}")
@@ -335,7 +409,7 @@ class TBG:
             char_data = list(db.get_character(user.id))
             db.add_item(user.id,game.hash_string(target_item),-1)
             char_data[item_data[1]]+=item_data[2]
-            char_data = await character.character_check(char_data,ctx.message)
+            char_data = await character.character_check(char_data,ctx.message.author,ctx.message)
             db.update_character(char_data)
             await ctx.message.channel.send(f"you gained {item_data[2]} {stats_target[item_data[1]-6]}")
 
@@ -345,9 +419,14 @@ class TBG:
             message_contents = ctx.message.content[7:]
             weapon_id = game.hash_string(message_contents)
             if db.get_user_item(user.id,weapon_id) is not None:
-                if db.get_weapon(weapon_id) is not None:
+                target_weapon = db.get_weapon(weapon_id)
+                if target_weapon is not None:
                     character_data = list(db.get_character(user.id))
-                    if db.get_weapon(weapon_id)[1] in character.get_class_weapons(character_data[3]):
+                    boolean, error_str =  character.can_equip(character_data,target_weapon)
+                    if not boolean:
+                        await ctx.message.channel.send(error_str)
+                        return
+                    if target_weapon[1] in character.get_class_weapons(character_data[3]):
                         if character_data[2] != game.hash_string("fist"):
                             db.add_item(user.id,character_data[2],1)
                         character_data[2] = weapon_id
@@ -355,7 +434,7 @@ class TBG:
                         db.update_character(character_data)
                         await ctx.message.channel.send(f"{message_contents} has been equiped")
                         return
-                    await ctx.message.channel.send(f"{character_data[3]} cannot equip {db.get_weapon(weapon_id)[1]}")
+                    await ctx.message.channel.send(f"{character_data[3]} cannot equip {target_weapon[1]}")
                     return
                 await ctx.message.channel.send(f"{message_contents} is not a valid weapon")
                 return
@@ -388,11 +467,18 @@ class TBG:
             await ctx.message.channel.send(f"{str(datetime.timedelta(seconds=604800-int(dif.total_seconds())))} left")
 
         @self.client.command()
+        async def user(ctx):
+            print(db.get_user(ctx.message.author.id))
+
+        @self.client.command()
         async def change(ctx):
             user = ctx.message.author
             target_class = ctx.message.content[8:].title()
             if db.get_class(target_class) is None:
                 await ctx.message.channel.send(f"{target_class} is not a valid class")
+                return
+            if "test seal" not in db.get_inventory(user.id)[0].keys():
+                await ctx.message.channel.send("you need a test seal to change classes")
                 return
             character_data = list(db.get_character(user.id))
             if target_class in character.beginner_classes and character_data[4] < 10:
@@ -416,11 +502,77 @@ class TBG:
                 await ctx.message.channel.send(f"{character_data[1]} doesn't meet the requirement for {target_class}, class requirements: {requirement_str}")
 
         @self.client.command()
-        async def level(ctx):
+        async def travel(ctx):
+            user = ctx.message.author
+            target_location = ctx.message.content[8:].title()
+            location_ids = {"First Floor":id["role"]["First Floor"],"Second Floor":id["role"]["Second Floor"],"Third Floor":id["role"]["Third Floor"]}
+            if target_location == "":
+                TravelEmbed = discord.Embed(colour=discord.Colour.orange())
+                TravelEmbed.set_author(name="Travel Locations")
+                for location_name in location_ids:
+                    TravelEmbed.add_field(name=f"**{location_name}**",value="`COST` transportation ticket",inline=False)
+                await ctx.message.channel.send(embed=TravelEmbed)
+                return
+            if "transportation ticket" not in db.get_inventory(user.id)[0].keys():
+                await ctx.message.channel.send("you need transportation to travel")
+                return
+            if target_location not in location_ids.keys():
+                await ctx.message.channel.send(f"{target_location} is not a valid location")
+                return
+            if db.get_character(user.id)[4] < 40:
+                await ctx.message.channel.send(f"you need to be at least level {40} to travel")
+                return
+            member = await self.guild.fetch_member(user.id)
+            for role in member.roles:
+                if role.id in location_ids.values():
+                    if role.id == location_ids[target_location]:
+                        await ctx.message.channel.send(f"you are already at {target_location}")
+                        return
+                    await member.remove_roles(role)
+            await member.add_roles(self.guild.get_role(id["role"][target_location]))
+            db.add_item(user.id,game.hash_string("transportation ticket"),-1)
+            await ctx.message.channel.send(f"{user.mention} has been transported to {target_location}")
+
+        @commands.has_any_role("mod")
+        @self.client.command()
+        async def level20(ctx):
             user = ctx.message.author
             char_data = list(db.get_character(user.id))
             char_data[4] += 20
             db.update_character(char_data)
+
+        @commands.has_any_role("mod")
+        @self.client.command()
+        async def level(ctx):
+            user = ctx.message.author
+            char_data = list(db.get_character(user.id))
+            char_data[5] += 10000
+            db.update_character(char_data)
+
+        @commands.has_any_role("mod")
+        @self.client.command()
+        async def complete_reset(ctx):
+            now = datetime.datetime.now()
+            user = ctx.message.author
+            db.update_character(character.generate_character(user.id,user.display_name,"swordsmen",game.hash_string("stone sword"),0))
+            db.update_user((user.id, now-datetime.timedelta(days=1), now-datetime.timedelta(days=7), now.date(), "", 0, 0))
+            db.clear_inventory(user.id)
+            db.update_bank(user.id,200)
+            await ctx.message.channel.send("account completely cleared")
+
+        @commands.has_any_role("mod")
+        @self.client.command()
+        async def god_mode(ctx):
+            now = datetime.datetime.now()
+            user = ctx.message.author
+            db.update_character((user.id, user.display_name, game.hash_string("stone sword"), "swordsmen", 100, 0, 100, 100, 100, 100, 100, 100, 100))
+
+        @commands.has_any_role("mod")
+        @self.client.command()
+        async def clear_inventory(ctx):
+            user = ctx.message.author
+            db.clear_inventory(user.id)
+            await ctx.message.channel.send("inventory completely cleared")
 
         @self.client.command()
         async def money(ctx):

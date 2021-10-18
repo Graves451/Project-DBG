@@ -8,10 +8,18 @@ Brigand,80-50-5-30-40-15, combined the arts of robbery with brute force,,axe
 Mercenary,65-45-20-35-30-20, willing to take any fight for the right price,,sword-spear
 Strategist,60-30-45-30-25-35, good for commanding,,sword-tome
 Longbowmen,60-50-15-35-20-20, longbow == more power,,bow
+Mounted Archer,65-45-15-45-25-10, combines the power of the horse and ranged combat,horse,bow
 Warrior,100-65-5-35-55-25,extremely good with an axe,,axe-sword
 Wizard,75-20-65-40-25-45,grew a beard and now can launch powerful attacks,,tome
-Knight,75-55-15-50-50-30, the tanks of the ancient battlefield,armored,spear-sword
-Sniper,75-65-10-45-25-20,aims only for the head,,bow
+Knight,90-55-15-50-50-30, the tanks of the ancient battlefield,armored,spear-sword
+Rocketeer,70-75-5-35-20-25, uses rockets for extra damage against armored enemies,,bow
+Mounted Knight,90-60-10-65-45-35, a really really fast knight,armored-horse,spear-sword
+Sniper,75-65-10-45-25-20, aims only for the head,,bow
+Spearmaster,85-60-15-40-35-15, master of the spear,,spear
+Ninja,80-45-10-70-25-30, put on a black rode and now runs twice as fast,,sword-bow
 Warlord,80-70-30-60-50-40,a blood hungry warrior,horse,axe
 Sharpshooter,65-75-25-55-25-30,once lost a 1v1 now all he does is aim for the head,,bow
 General,75-25-80-40-35-50,wears a pickelhelm for extra fighting prowess,,tome
+Gamer,50-10-30-40-50-30,doesn't seem to be fit for a fight,,tome
+Viking,95-90-10-20-60-20,you don't want to be hit by this guy,,axe
+Taoist,70-25-80-45-30-55,wears a fake beard to seem older,,tome
