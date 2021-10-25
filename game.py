@@ -115,10 +115,11 @@ class shop:
 
     def generate_items(self):
         all_item_names = list(db.get_all_item())
+        possible_items = []
         for item_data in all_item_names:
-            if item_data[0] in database.forbidden_items:
-                all_item_names.remove(item_data)
-        self.items = [value[0] for value in random.sample(all_item_names,6)]
+            if item_data[0] not in database.forbidden_items:
+                possible_items.append(item_data[0])
+        self.items = random.sample(possible_items,6)
         Game_logger.info("refreshing items")
 
     def return_items(self):

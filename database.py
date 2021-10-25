@@ -37,7 +37,7 @@ weapons = {
     "tome":[]
 }
 
-forbidden_items = ["fist","gold coin","vodka","whisky","gin","sake","beer","tequila","water"]
+forbidden_items = ["fist","gold coin","vodka","whiskey","gin","sake","beer","tequila","water"]
 
 abbreviations = [("shp","small healing potion"),("lhp","large healing potion")]
 

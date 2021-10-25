@@ -78,8 +78,8 @@ class tavernkeeper:
             timer_data = db.get_timer(user.id,"drink")
             if timer_data is not None:
                 dif = datetime.datetime.now()-timer_data[2]
-                if dif.seconds < 3600:
-                    await ctx.message.channel.send(f"{str(datetime.timedelta(seconds=3600-int(dif.total_seconds())))} left")
+                if dif.seconds < 1800:
+                    await ctx.message.channel.send(f"{str(datetime.timedelta(seconds=1800-int(dif.total_seconds())))} left")
                     return
                 else:
                     db.update_timer(user.id,"drink",datetime.datetime.now())

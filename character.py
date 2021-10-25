@@ -64,7 +64,6 @@ def generate_enemy(name,level):
     enemy_data[6] = enemy_data[7]
     return enemy_data
 
-
 def generate_boss(name,level,class_name,weapon_id):
     #used the 0 at the start as placement for the message id
     boss_data = [0, name, weapon_id, class_name, level, 0, 0, 20, 10, 10, 10, 10, 10,generate_boss_loot(level),""]
@@ -79,24 +78,24 @@ def generate_boss(name,level,class_name,weapon_id):
 
 def generate_class_weapon(class_name,level):
     weapon_choice = random.choice(db.get_class(class_name)[4].split("-"))
-    return database.weapons[weapon_choice][int(min(level/80,0.99)*len(database.weapons[weapon_choice]))]
+    return database.weapons[weapon_choice][int(min(level/90,0.99)*len(database.weapons[weapon_choice]))]
 
 def generate_enemy_loot(level):
-    return f"{str(int((random.randint(4,7)/10)*level))}.gold coin-{str(int((random.randint(15,20)/10)*level))}.exp"
+    return f"{str(2+int((random.randint(4,7)/10)*level))}.gold coin-{str(5+int((random.randint(15,20)/10)*level))}.exp"
 
 def generate_boss_loot(level):
-    return f"{str(int((level*4)))}.gold coin-{str(int((level*10)**1.25))}.exp"
+    return f"{str(120+int((level*4)))}.gold coin-{str(int((level*10)**1.25))}.exp"
 
 def generate_character(user_id, name, user_class, weapon_id, resets):
-    return (user_id, name, weapon_id, user_class, 1, 0, 15+resets, 15+resets, 6+resets, 5+resets, 7+resets, 5+resets, 3+resets)
+    return (user_id, name, weapon_id, user_class, 1, 0, 20+resets, 20+resets, 7+resets, 6+resets, 8+resets, 6+resets, 4+resets)
 
 def can_equip(char_data,target_weapon):
     if target_weapon[4] == "physical":
-        if char_data[8] >= int(target_weapon[2]*1.25):
+        if char_data[8] >= int(target_weapon[2]*0.5):
             return True,0
         return False,f"you need at least {int(target_weapon[2]*0.5)} STR to equip it"
     if target_weapon[4] == "magical":
-        if char_data[9] >= int(target_weapon[2]*1.3):
+        if char_data[9] >= int(target_weapon[2]*0.5):
             return True,0
         return False,f"you need at least {int(target_weapon[2]*0.5)} MAG to equip it"
 
@@ -116,7 +115,7 @@ def class_requirement(target_class):
     stat_requirements = []
     for x in range(len(class_growth)):
         if class_growth[x] == stat_requirement:
-            stat_requirements.append((x,0.25*int(class_growth[x])))
+            stat_requirements.append((x,0.2*int(class_growth[x])))
     return stat_requirements
 
 async def character_check(user_data,user,msg):

@@ -7,16 +7,6 @@ import logging
 from discord.ext.commands import Bot
 from discord.ext import tasks, commands
 
-help_string = '''```
-.shop    returns what's current in shop
-
-.buy <item> <amount>  buy a certain amount of items
-.sell <item> <amount> sell a certain amount of items
-
-The shop rotates every 3 hours
-and you will always be able to buy small healing potions and large healing potions
-```'''
-
 logging.basicConfig(handlers=[logging.FileHandler(filename="logs/merchant.log",
                                                  encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
@@ -45,23 +35,21 @@ class merchant:
         return self.client.get_emoji(int(emoji_id))
 
     def prepare_client(self):
+        @tasks.loop(hours=2.0)
+        async def rotate_items():
+            self.shop.generate_items()
+            print("shop rotating")
+
         @self.client.event
         async def on_ready():
             print("ready to trade")
+            rotate_items.start()
 
         @self.client.event
         async def on_command_error(ctx, error):
             if isinstance(error, commands.CommandNotFound):
                 return
             raise error
-
-        @tasks.loop(hours=3.0)
-        async def rotate_items():
-            self.shop.generate_items()
-
-        @self.client.command()
-        async def help(ctx):
-            await ctx.message.channel.send(help_string)
 
         @self.client.command()
         async def shop(ctx):
