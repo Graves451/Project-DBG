@@ -1,3 +1,4 @@
+![image](https://repository-images.githubusercontent.com/343314273/410a423d-07ac-4c1e-9a87-48be1afa3537)
 # Discord-RPG
 an online text-based rpg game developed on the discord platform 
 
